@@ -43,10 +43,10 @@ set.seed(1234)
 ########################################
 genePlot<- function(g,cols=NULL,plotdir){
   try({
-    p1 <- DimPlot(atac, group.by = "predicted.id", label = TRUE, repel = TRUE) + ggtitle("scATAC-seq cells") + NoLegend()
-    p2 <- DimPlot(rna, label = TRUE, repel = TRUE) + ggtitle("scRNA-seq cells") + NoLegend()
-    p3 <- FeaturePlot(atac,g, max.cutoff = 'q95',order = T)
-    p4 <- FeaturePlot(rna,g,order=T)
+    p1 <- DimPlot(atac, group.by = "predicted.id", label = TRUE, repel = TRUE) +  coord_equal() + theme_void() + ggtitle("scATAC-seq cells") + NoLegend()
+    p2 <- DimPlot(rna, label = TRUE, repel = TRUE) + ggtitle("scRNA-seq cells") + coord_equal() + theme_void() + NoLegend()
+    p3 <- FeaturePlot(atac,g, max.cutoff = 'q95',order = T) + coord_equal() + theme_void() + NoLegend()
+    p4 <- FeaturePlot(rna,g,order=T) + coord_equal() + theme_void() + NoLegend()
     (p1|p2)/(p3|p4) + plot_annotation(title = g,theme = theme(plot.title = element_text(size = 18)))
     ggsave(filename = paste0(plotdir,'/',g,'_UMAP_Vln.png'), width = 8,height=8)
   })
@@ -60,7 +60,7 @@ genePlot<- function(g,cols=NULL,plotdir){
 # RNA-seq filename if it exits
 #####################################
 
-rnaseqfile <- '../scRNA/Seurat/AGIQ424_RUL_D_CD45neg_20190922.RDS'
+rnaseqfile <- '../scRNA/Seurat/R710000567_COPD_D.RDS'
 
 
 #### Setup in and out dirs
@@ -120,10 +120,11 @@ atac$blacklist_ratio <- atac$blacklist_region_fragments / atac$peak_region_fragm
 
 atac$high.tss <- ifelse(atac$TSS.enrichment > 2, 'High', 'Low')
 TSSPlot(atac, group.by = 'high.tss') + NoLegend()
+ggsave(filename = paste0(qcdir,'/TSS_Plot.png'))
 
 atac$nucleosome_group <- ifelse(atac$nucleosome_signal > 4, 'NS > 4', 'NS < 4')
 FragmentHistogram(object = atac, group.by = 'nucleosome_group')
-
+ggsave(filename = paste0(qcdir,'/Nucleosome_Plot.png'))
 
 
 VlnPlot(
@@ -134,7 +135,7 @@ VlnPlot(
   ncol = 5
 )
 
-ggsave(filename = paste0(qcdir,'/QC_Plot.png'))
+ggsave(filename = paste0(qcdir,'/QC_Plot.png'), width=12)
 
 
 
@@ -259,7 +260,8 @@ rna <- FindVariableFeatures(
   nfeatures = 4000
 )
 
-
+rna[['var_cluster']] <- Idents(rna)
+ 
 DefaultAssay(atac) <- 'RNA'
 
 transfer.anchors <- FindTransferAnchors(
